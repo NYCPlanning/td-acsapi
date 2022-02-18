@@ -159,20 +159,20 @@ df.to_csv(path+'Blueprint/census/edusum.csv',index=False)
 #%% Household Income
 df=pd.DataFrame()
 for i in ['005','047','059','061','081','085','119']:
-    rs=requests.get('https://api.census.gov/data/2019/acs/acs5/subject?get=NAME,group(S1901)&for=tract:*&in=state:36 county:'+str(i)+'&key='+apikey,proxies=p)
+    rs=requests.get('https://api.census.gov/data/2019/acs/acs5?get=NAME,group(B19001)&for=tract:*&in=state:36 county:'+str(i)+'&key='+apikey,proxies=p)
     tp=pd.read_json(rs.content)
     tp.columns=tp.loc[0]
     tp['tractid']=[str(x)[9:] for x in tp['GEO_ID']]
-    tp=tp.loc[1:,['tractid','S1901_C01_001E','S1901_C01_002E','S1901_C01_003E','S1901_C01_004E','S1901_C01_005E','S1901_C01_006E','S1901_C01_007E','S1901_C01_008E','S1901_C01_009E','S1901_C01_010E','S1901_C01_011E','S1901_C01_012E','S1901_C01_013E']].reset_index(drop=True)
+    tp=tp.loc[1:,['tractid','B19001_001E','B19001_002E','B19001_003E','B19001_004E','B19001_005E','B19001_006E','B19001_007E','B19001_008E','B19001_009E','B19001_010E','B19001_011E','B19001_012E','B19001_013E','B19001_014E','B19001_015E','B19001_016E','B19001_017E']].reset_index(drop=True)
     df=pd.concat([df,tp],axis=0,ignore_index=True)
 for i in ['003','017','031']:
-    rs=requests.get('https://api.census.gov/data/2019/acs/acs5/subject?get=NAME,group(S1901)&for=tract:*&in=state:34 county:'+str(i)+'&key='+apikey)
+    rs=requests.get('https://api.census.gov/data/2019/acs/acs5?get=NAME,group(B19001)&for=tract:*&in=state:34 county:'+str(i)+'&key='+apikey,proxies=p)
     tp=pd.read_json(rs.content)
     tp.columns=tp.loc[0]
     tp['tractid']=[str(x)[9:] for x in tp['GEO_ID']]
-    tp=tp.loc[1:,['tractid','S1901_C01_001E','S1901_C01_002E','S1901_C01_003E','S1901_C01_004E','S1901_C01_005E','S1901_C01_006E','S1901_C01_007E','S1901_C01_008E','S1901_C01_009E','S1901_C01_010E','S1901_C01_011E','S1901_C01_012E','S1901_C01_013E']].reset_index(drop=True)
+    tp=tp.loc[1:,['tractid','B19001_001E','B19001_002E','B19001_003E','B19001_004E','B19001_005E','B19001_006E','B19001_007E','B19001_008E','B19001_009E','B19001_010E','B19001_011E','B19001_012E','B19001_013E','B19001_014E','B19001_015E','B19001_016E','B19001_017E']].reset_index(drop=True)
     df=pd.concat([df,tp],axis=0,ignore_index=True)
-df.columns=['tractid','hh','lt10','lt15','lt25','lt35','lt50','lt75','lt100','lt150','lt200','mt200','medianinc','meaninc']
+df.columns=['tractid','hh','lt10','lt15','lt20','lt25','lt30','lt35','lt40','lt45','lt50','lt60','lt75','lt100','lt125','lt150','lt200','mt200']
 df.to_csv(path+'Blueprint/census/hhinc.csv',index=False)
 
 df=pd.DataFrame()
@@ -182,11 +182,11 @@ for i in ['times square','dbk','broadway junction','bxhub','fordham','morris par
     tp['county']=[str(x)[0:5] for x in tp['tractid']]
     tp=tp[np.isin(tp['county'],['36005','36047','36061','36081','36085'])].reset_index(drop=True)
     tp=pd.merge(tp,hhinc,how='left',on='tractid')
-    tp=tp[tp['meaninc']>=0].reset_index(drop=True)
     tp['location']=str(i)
-    tp['agginc']=tp['hh']*tp['meaninc']
-    tp=tp.groupby(['location'],as_index=False).agg({'agginc':'sum','hh':'sum'}).reset_index(drop=True)
-    tp['meaninc']=tp['agginc']/tp['hh']
+    tp=tp.groupby(['location'],as_index=False).agg({'hh':'sum','lt10':'sum','lt15':'sum','lt20':'sum','lt25':'sum',
+                                                    'lt30':'sum','lt35':'sum','lt40':'sum','lt45':'sum','lt50':'sum',
+                                                    'lt60':'sum','lt75':'sum','lt100':'sum','lt125':'sum',
+                                                    'lt150':'sum','lt200':'sum','mt200':'sum'}).reset_index(drop=True)
     df=pd.concat([df,tp],axis=0,ignore_index=True)
 df.to_csv(path+'Blueprint/census/hhincsum.csv',index=False)
 

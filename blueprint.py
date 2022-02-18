@@ -2,14 +2,16 @@
 import requests
 import pandas as pd
 import numpy as np
+import geopandas as gpd
 
 
 pd.set_option('display.max_columns', None)
 path='C:/Users/mayij/Desktop/'
+path='C:/Users/Y_Ma2/Desktop/'
 
-apikey=pd.read_csv(path+'DOC/GITHUB/td-acsapi/secrets.csv',dtype=str).loc[0,'value']
-usernm=pd.read_csv(path+'DOC/GITHUB/td-acsapi/secrets.csv',dtype=str).loc[1,'value']
-passwd=pd.read_csv(path+'DOC/GITHUB/td-acsapi/secrets.csv',dtype=str).loc[2,'value']
+apikey=pd.read_csv(path+'GITHUB/td-acsapi/secrets.csv',dtype=str).loc[0,'value']
+usernm=pd.read_csv(path+'GITHUB/td-acsapi/secrets.csv',dtype=str).loc[1,'value']
+passwd=pd.read_csv(path+'GITHUB/td-acsapi/secrets.csv',dtype=str).loc[2,'value']
 
 p={'http':'http://'+str(usernm)+':'+str(passwd)+'@dcpproxy1.dcp.nycnet:8080',
    'https':'http://'+str(usernm)+':'+str(passwd)+'@dcpproxy1.dcp.nycnet:8080'}
@@ -24,6 +26,20 @@ for i in ['times square','dbk','broadway junction','bxhub','fordham','morris par
     k=k['county'].unique()
     tp=tp+list(k)
 tp=set(tp)
+
+
+
+#%% All Locations
+df=pd.DataFrame()
+quadstatectclipped=gpd.read_file(path+'Blueprint/travelshed/quadstatectclipped.geojson')
+for i in ['dbk','broadway junction','bxhub','fordham','morris park','e14st','e23st','e125st','w125st','lic','jamaica','st george']:
+    tp=pd.read_csv(path+'Blueprint/travelshed/'+str(i)+'/'+str(i)+'.csv',dtype=str)
+    tp=tp[['tractid']].reset_index(drop=True)
+    df=pd.concat([df,tp],axis=0,ignore_index=True)
+df=df.drop_duplicates(keep='first').reset_index(drop=True)
+df.to_csv(path+'Blueprint/travelshed/all/all.csv',index=False)
+df=pd.merge(quadstatectclipped,df,how='inner',on='tractid')
+df.to_file(path+'Blueprint/travelshed/all/all.geojson',driver='GeoJSON')
 
 
 
@@ -48,7 +64,7 @@ df.to_csv(path+'Blueprint/census/pop.csv',index=False)
 
 df=pd.DataFrame()
 pop=pd.read_csv(path+'Blueprint/census/pop.csv',dtype=float,converters={'tractid':str})
-for i in ['times square','dbk','broadway junction','bxhub','fordham','morris park','e14st','e23st','e125st','w125st','lic','jamaica','st george']:
+for i in ['times square','dbk','broadway junction','bxhub','fordham','morris park','e14st','e23st','e125st','w125st','lic','jamaica','st george','all']:
     tp=pd.read_csv(path+'Blueprint/travelshed/'+str(i)+'/'+str(i)+'.csv',dtype=str)
     tp=pd.merge(tp,pop,how='left',on='tractid')
     tp['location']=str(i)
@@ -58,7 +74,7 @@ df.to_csv(path+'Blueprint/census/popsumregion.csv',index=False)
 
 df=pd.DataFrame()
 pop=pd.read_csv(path+'Blueprint/census/pop.csv',dtype=float,converters={'tractid':str})
-for i in ['times square','dbk','broadway junction','bxhub','fordham','morris park','e14st','e23st','e125st','w125st','lic','jamaica','st george']:
+for i in ['times square','dbk','broadway junction','bxhub','fordham','morris park','e14st','e23st','e125st','w125st','lic','jamaica','st george','all']:
     tp=pd.read_csv(path+'Blueprint/travelshed/'+str(i)+'/'+str(i)+'.csv',dtype=str)
     tp['county']=[str(x)[0:5] for x in tp['tractid']]
     tp=tp[np.isin(tp['county'],['36005','36047','36061','36081','36085'])].reset_index(drop=True)
@@ -91,7 +107,7 @@ df.to_csv(path+'Blueprint/census/race.csv',index=False)
 
 df=pd.DataFrame()
 race=pd.read_csv(path+'Blueprint/census/race.csv',dtype=float,converters={'tractid':str})
-for i in ['times square','dbk','broadway junction','bxhub','fordham','morris park','e14st','e23st','e125st','w125st','lic','jamaica','st george']:
+for i in ['times square','dbk','broadway junction','bxhub','fordham','morris park','e14st','e23st','e125st','w125st','lic','jamaica','st george','all']:
     tp=pd.read_csv(path+'Blueprint/travelshed/'+str(i)+'/'+str(i)+'.csv',dtype=str)
     tp['county']=[str(x)[0:5] for x in tp['tractid']]
     tp=tp[np.isin(tp['county'],['36005','36047','36061','36081','36085'])].reset_index(drop=True)
@@ -126,7 +142,7 @@ df.to_csv(path+'Blueprint/census/edu.csv',index=False)
 
 df=pd.DataFrame()
 edu=pd.read_csv(path+'Blueprint/census/edu.csv',dtype=float,converters={'tractid':str})
-for i in ['times square','dbk','broadway junction','bxhub','fordham','morris park','e14st','e23st','e125st','w125st','lic','jamaica','st george']:
+for i in ['times square','dbk','broadway junction','bxhub','fordham','morris park','e14st','e23st','e125st','w125st','lic','jamaica','st george','all']:
     tp=pd.read_csv(path+'Blueprint/travelshed/'+str(i)+'/'+str(i)+'.csv',dtype=str)
     tp['county']=[str(x)[0:5] for x in tp['tractid']]
     tp=tp[np.isin(tp['county'],['36005','36047','36061','36081','36085'])].reset_index(drop=True)
@@ -143,25 +159,25 @@ df.to_csv(path+'Blueprint/census/edusum.csv',index=False)
 #%% Household Income
 df=pd.DataFrame()
 for i in ['005','047','059','061','081','085','119']:
-    rs=requests.get('https://api.census.gov/data/2019/acs/acs5/subject?get=NAME,group(S1901)&for=tract:*&in=state:36 county:'+str(i)+'&key='+apikey)
+    rs=requests.get('https://api.census.gov/data/2019/acs/acs5/subject?get=NAME,group(S1901)&for=tract:*&in=state:36 county:'+str(i)+'&key='+apikey,proxies=p)
     tp=pd.read_json(rs.content)
     tp.columns=tp.loc[0]
     tp['tractid']=[str(x)[9:] for x in tp['GEO_ID']]
-    tp=tp.loc[1:,['tractid','S1901_C01_001E','S1901_C01_012E','S1901_C01_013E']].reset_index(drop=True)
+    tp=tp.loc[1:,['tractid','S1901_C01_001E','S1901_C01_002E','S1901_C01_003E','S1901_C01_004E','S1901_C01_005E','S1901_C01_006E','S1901_C01_007E','S1901_C01_008E','S1901_C01_009E','S1901_C01_010E','S1901_C01_011E','S1901_C01_012E','S1901_C01_013E']].reset_index(drop=True)
     df=pd.concat([df,tp],axis=0,ignore_index=True)
 for i in ['003','017','031']:
     rs=requests.get('https://api.census.gov/data/2019/acs/acs5/subject?get=NAME,group(S1901)&for=tract:*&in=state:34 county:'+str(i)+'&key='+apikey)
     tp=pd.read_json(rs.content)
     tp.columns=tp.loc[0]
     tp['tractid']=[str(x)[9:] for x in tp['GEO_ID']]
-    tp=tp.loc[1:,['tractid','S1901_C01_001E','S1901_C01_012E','S1901_C01_013E']].reset_index(drop=True)
+    tp=tp.loc[1:,['tractid','S1901_C01_001E','S1901_C01_002E','S1901_C01_003E','S1901_C01_004E','S1901_C01_005E','S1901_C01_006E','S1901_C01_007E','S1901_C01_008E','S1901_C01_009E','S1901_C01_010E','S1901_C01_011E','S1901_C01_012E','S1901_C01_013E']].reset_index(drop=True)
     df=pd.concat([df,tp],axis=0,ignore_index=True)
-df.columns=['tractid','hh','medianinc','meaninc']
+df.columns=['tractid','hh','lt10','lt15','lt25','lt35','lt50','lt75','lt100','lt150','lt200','mt200','medianinc','meaninc']
 df.to_csv(path+'Blueprint/census/hhinc.csv',index=False)
 
 df=pd.DataFrame()
 hhinc=pd.read_csv(path+'Blueprint/census/hhinc.csv',dtype=float,converters={'tractid':str})
-for i in ['times square','dbk','broadway junction','bxhub','fordham','morris park','e14st','e23st','e125st','w125st','lic','jamaica','st george']:
+for i in ['times square','dbk','broadway junction','bxhub','fordham','morris park','e14st','e23st','e125st','w125st','lic','jamaica','st george','all']:
     tp=pd.read_csv(path+'Blueprint/travelshed/'+str(i)+'/'+str(i)+'.csv',dtype=str)
     tp['county']=[str(x)[0:5] for x in tp['tractid']]
     tp=tp[np.isin(tp['county'],['36005','36047','36061','36081','36085'])].reset_index(drop=True)
@@ -197,7 +213,7 @@ df.to_csv(path+'Blueprint/census/poverty.csv',index=False)
 
 df=pd.DataFrame()
 poverty=pd.read_csv(path+'Blueprint/census/poverty.csv',dtype=float,converters={'tractid':str})
-for i in ['times square','dbk','broadway junction','bxhub','fordham','morris park','e14st','e23st','e125st','w125st','lic','jamaica','st george']:
+for i in ['times square','dbk','broadway junction','bxhub','fordham','morris park','e14st','e23st','e125st','w125st','lic','jamaica','st george','all']:
     tp=pd.read_csv(path+'Blueprint/travelshed/'+str(i)+'/'+str(i)+'.csv',dtype=str)
     tp['county']=[str(x)[0:5] for x in tp['tractid']]
     tp=tp[np.isin(tp['county'],['36005','36047','36061','36081','36085'])].reset_index(drop=True)
@@ -230,7 +246,7 @@ df.to_csv(path+'Blueprint/census/mode.csv',index=False)
 
 df=pd.DataFrame()
 mode=pd.read_csv(path+'Blueprint/census/mode.csv',dtype=float,converters={'tractid':str})
-for i in ['times square','dbk','broadway junction','bxhub','fordham','morris park','e14st','e23st','e125st','w125st','lic','jamaica','st george']:
+for i in ['times square','dbk','broadway junction','bxhub','fordham','morris park','e14st','e23st','e125st','w125st','lic','jamaica','st george','all']:
     tp=pd.read_csv(path+'Blueprint/travelshed/'+str(i)+'/'+str(i)+'.csv',dtype=str)
     tp['county']=[str(x)[0:5] for x in tp['tractid']]
     tp=tp[np.isin(tp['county'],['36005','36047','36061','36081','36085'])].reset_index(drop=True)
@@ -266,7 +282,7 @@ df.to_csv(path+'Blueprint/census/time.csv',index=False)
 
 df=pd.DataFrame()
 time=pd.read_csv(path+'Blueprint/census/time.csv',dtype=float,converters={'tractid':str})
-for i in ['times square','dbk','broadway junction','bxhub','fordham','morris park','e14st','e23st','e125st','w125st','lic','jamaica','st george']:
+for i in ['times square','dbk','broadway junction','bxhub','fordham','morris park','e14st','e23st','e125st','w125st','lic','jamaica','st george','all']:
     tp=pd.read_csv(path+'Blueprint/travelshed/'+str(i)+'/'+str(i)+'.csv',dtype=str)
     tp['county']=[str(x)[0:5] for x in tp['tractid']]
     tp=tp[np.isin(tp['county'],['36005','36047','36061','36081','36085'])].reset_index(drop=True)
@@ -303,7 +319,7 @@ df.to_csv(path+'Blueprint/census/meantime.csv',index=False)
 df=pd.DataFrame()
 mode=pd.read_csv(path+'Blueprint/census/mode.csv',dtype=float,converters={'tractid':str})
 meantime=pd.read_csv(path+'Blueprint/census/meantime.csv',dtype=float,converters={'tractid':str})
-for i in ['times square','dbk','broadway junction','bxhub','fordham','morris park','e14st','e23st','e125st','w125st','lic','jamaica','st george']:
+for i in ['times square','dbk','broadway junction','bxhub','fordham','morris park','e14st','e23st','e125st','w125st','lic','jamaica','st george','all']:
     tp=pd.read_csv(path+'Blueprint/travelshed/'+str(i)+'/'+str(i)+'.csv',dtype=str)
     tp['county']=[str(x)[0:5] for x in tp['tractid']]
     tp=tp[np.isin(tp['county'],['36005','36047','36061','36081','36085'])].reset_index(drop=True)
@@ -316,9 +332,6 @@ for i in ['times square','dbk','broadway junction','bxhub','fordham','morris par
     tp['meantime']=tp['aggtime']/(tp['worker16']-tp['home'])
     df=pd.concat([df,tp],axis=0,ignore_index=True)
 df.to_csv(path+'Blueprint/census/meantimesum.csv',index=False)
-
-
-
 
 
 
